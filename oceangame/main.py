@@ -15,12 +15,26 @@ class palette:
     ocean = [0,119,190]
     black = [0,0,0]
 
+class texture:
+    playerShip = "res/ship/000.bmp"
+    arrow = "res/bullet/arrow.png"
+
+class Projectile(arcade.Sprite):
+    def update(self):
+        self.center_x += self.changeX
+        self.center_y += self.changeY
+    def fire(self, angle, speed):
+        self.angle = angle
+        self.changeX = getCirSect(self.angle)[0] * speed
+        self.changeY = getCirSect(self.angle)[1] * speed
+
 def getCirSect(angle): #get co-ords of where a line drawn from the center intersects with the circumference
     theta = math.radians(angle + 90)
     x = math.cos(theta)
     y = math.sin(theta)
-
     return [x,y]
+
+
 
 class game(arcade.Window):
     def __init__(self):
@@ -29,11 +43,15 @@ class game(arcade.Window):
 
     def setup(self):
         self.playerList = arcade.SpriteList()
-        self.playerSprite = arcade.Sprite("res/ship/000.bmp", 0.5)
-        self.playerSprite.x = 0
-        self.playerSprite.y = 200
+        self.playerSprite = arcade.Sprite(texture.playerShip, 0.5)
+        self.playerSprite.x = 400
+        self.playerSprite.y = 300
         self.playerList.append(self.playerSprite)
 
+        self.projectileList = arcade.SpriteList()
+
+        self.fireCooldownLEFT = 0
+        self.fireCooldownRIGHT = 0
     class player:
         speed = 1
         x = 0
@@ -42,12 +60,18 @@ class game(arcade.Window):
         changeY = 0
         changeDIR= 0
         changeForward = 0
+        arrowSpeed = 4
+        arrowCooldown = 0.5
 
     def on_draw(self):
         arcade.start_render()
+
         self.playerList.draw()
+        self.projectileList.draw()
 
     def on_key_press(self, key, modifiers):
+
+        #movement
         if key == arcade.key.W:
             if self.player.changeForward != 3:
                 self.player.changeForward += self.player.speed
@@ -59,6 +83,16 @@ class game(arcade.Window):
         if key == arcade.key.A:
             self.player.changeDIR += self.player.speed
 
+        #firing
+        if key == arcade.key.LEFT:
+            if self.fireCooldownLEFT <= 0:
+                self.fire(90)
+                self.fireCooldownLEFT = self.player.arrowCooldown
+        if key == arcade.key.RIGHT:
+            if self.fireCooldownRIGHT <= 0:
+                self.fire(-90)
+                self.fireCooldownRIGHT = self.player.arrowCooldown
+
     def on_key_release(self, key, modifiers):
         if key == arcade.key.D:
             self.player.changeDIR += self.player.speed
@@ -67,7 +101,6 @@ class game(arcade.Window):
 
 
     def update(self, delta_time):
-        print(self.player.changeForward)
 
         self.player.changeX = getCirSect(self.playerSprite.angle)[0] * self.player.changeForward
         self.player.changeY = getCirSect(self.playerSprite.angle)[1] * self.player.changeForward
@@ -76,15 +109,32 @@ class game(arcade.Window):
         self.playerSprite.angle += self.player.changeDIR
         self.playerSprite.x += self.player.changeX
         self.playerSprite.y += self.player.changeY
-        self.playerSprite.center_x = self.playerSprite.x
-        self.playerSprite.center_y = self.playerSprite.y
+        self.playerSprite.center_x = self.playerSprite.x #shortcuts
+        self.playerSprite.center_y = self.playerSprite.y #shortcuts
+
+        self.projectileList.update()
 
         if self.playerSprite.angle > 360 or self.playerSprite.angle < -360:
             self.playerSprite.angle = 0
 
+        if self.fireCooldownLEFT > 0:
+            self.fireCooldownLEFT += -delta_time
+        if self.fireCooldownRIGHT > 0:
+            self.fireCooldownRIGHT += -delta_time
+
+        print("LEFT: {}, RIGHT: {}".format(self.fireCooldownLEFT, self.fireCooldownRIGHT))
+
+    def fire(self, angle):
+
+        for i in range(-1,2):
+            arrow = Projectile(texture.arrow, 0.25 + 0.125)
+            arrow.center_x = self.playerSprite.x + getCirSect(self.playerSprite.angle)[0] * 20 * i
+            arrow.center_y = self.playerSprite.y + getCirSect(self.playerSprite.angle)[1] * 20 * i
+            arrow.fire(self.playerSprite.angle + angle, self.player.arrowSpeed)
+            self.projectileList.append(arrow)
+
 
 def main():
-
     window = game()
     window.setup()
     arcade.run()
