@@ -23,6 +23,11 @@ class Projectile(arcade.Sprite):
     def update(self):
         self.center_x += self.changeX
         self.center_y += self.changeY
+        if self.center_x > 800 or self.center_x < 0:
+            self.kill()
+        if self.center_y > 600 or self.center_y < 0:
+            self.kill()
+
     def fire(self, angle, speed):
         self.angle = angle
         self.changeX = getCirSect(self.angle)[0] * speed
@@ -121,8 +126,6 @@ class game(arcade.Window):
             self.fireCooldownLEFT += -delta_time
         if self.fireCooldownRIGHT > 0:
             self.fireCooldownRIGHT += -delta_time
-
-        print("LEFT: {}, RIGHT: {}".format(self.fireCooldownLEFT, self.fireCooldownRIGHT))
 
     def fire(self, angle):
 
