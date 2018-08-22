@@ -18,22 +18,25 @@ class palette:
 
 class texture:
     class player:
-        ship = "res/ship/000.bmp"
+        ship = "res/ship/player/nemedship.png"
 
     #universal
     arrow = "res/bullet/arrow.png"
 
 class Projectile(arcade.Sprite): #use for all proj
+    def __init__(self, texture, scale, startX, startY, angle, speed):
+        super().__init__(texture, scale)
+        self.center_x = startX
+        self.center_y = startY
+        self.angle = angle
+        self.changeX = getCirSect(self.angle)[0] * speed
+        self.changeY = getCirSect(self.angle)[1] * speed
+
     def update(self):
         self.center_x += self.changeX
         self.center_y += self.changeY
         if self.center_x < -50 or self.center_x > 850 or self.center_y < -50 or self.center_y > 650:
             self.kill()
-
-    def fire(self, angle, speed):
-        self.angle = angle
-        self.changeX = getCirSect(self.angle)[0] * speed
-        self.changeY = getCirSect(self.angle)[1] * speed
 
 def getCirSect(angle): #get co-ords of where a line drawn from the center intersects with the circumference
     theta = math.radians(angle + 90)
@@ -49,7 +52,7 @@ class game(arcade.Window):
 
     def setup(self):
         self.playerList = arcade.SpriteList()
-        self.playerSprite = arcade.Sprite(texture.player.ship, 0.5)
+        self.playerSprite = arcade.Sprite(texture.player.ship, 2)
         self.playerSprite.x = 400
         self.playerSprite.y = 300
         self.playerList.append(self.playerSprite)
@@ -67,7 +70,7 @@ class game(arcade.Window):
         changeDIR= 0
         changeForward = 0
         arrowSpeed = 4
-        arrowCooldown = 0.5
+        arrowCooldown = 1
 
     def on_draw(self):
         arcade.start_render()
@@ -92,11 +95,22 @@ class game(arcade.Window):
         #firing
         if key == arcade.key.LEFT:
             if self.fireCooldownLEFT <= 0:
-                self.fire(90)
+                for i in range(-1,2):
+                    localX = getCirSect(self.playerSprite.angle)[0] * 20 * i
+                    localY = getCirSect(self.playerSprite.angle)[1] * 20 * i
+                    arrow = Projectile(texture.arrow, 0.375, self.playerSprite.x + localX, self.playerSprite.y + localY, self.playerSprite.angle + 90, self.player.arrowSpeed)
+                    self.projectileList.append(arrow)
+                    
                 self.fireCooldownLEFT = self.player.arrowCooldown
+
         if key == arcade.key.RIGHT:
             if self.fireCooldownRIGHT <= 0:
-                self.fire(-90)
+                for i in range(-1,2):
+                    localX = getCirSect(self.playerSprite.angle)[0] * 20 * i
+                    localY = getCirSect(self.playerSprite.angle)[1] * 20 * i
+                    arrow = Projectile(texture.arrow, 0.375, self.playerSprite.x + localX, self.playerSprite.y + localY, self.playerSprite.angle + -90, self.player.arrowSpeed)
+                    self.projectileList.append(arrow)
+
                 self.fireCooldownRIGHT = self.player.arrowCooldown
 
     def on_key_release(self, key, modifiers):
@@ -108,6 +122,8 @@ class game(arcade.Window):
 
     def update(self, delta_time):
         self.projectileList.update()
+
+        print(self.fireCooldownLEFT, self.fireCooldownRIGHT)
 
         self.player.changeX = getCirSect(self.playerSprite.angle)[0] * self.player.changeForward
         self.player.changeY = getCirSect(self.playerSprite.angle)[1] * self.player.changeForward
@@ -125,15 +141,6 @@ class game(arcade.Window):
             self.fireCooldownLEFT += -delta_time
         if self.fireCooldownRIGHT > 0:
             self.fireCooldownRIGHT += -delta_time
-
-    def fire(self, angle):
-
-        for i in range(-1,2):
-            arrow = Projectile(texture.arrow, 0.25 + 0.125)
-            arrow.center_x = self.playerSprite.x + getCirSect(self.playerSprite.angle)[0] * 20 * i
-            arrow.center_y = self.playerSprite.y + getCirSect(self.playerSprite.angle)[1] * 20 * i
-            arrow.fire(self.playerSprite.angle + angle, self.player.arrowSpeed)
-            self.projectileList.append(arrow)
 
 #-------------------------------------------------------------------------------
 
