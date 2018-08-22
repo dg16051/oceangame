@@ -18,6 +18,8 @@ class palette:
 class texture:
     class player:
         ship = "res/ship/player/nemedship.png"
+    class enemy:
+        ship = "res/ship/enemy/formorianship.png"
 
     #universal
     arrow = "res/bullet/arrow.png"
@@ -62,7 +64,25 @@ class Player(arcade.Sprite):
         if self.angle > 360 or self.angle < -360:
             self.angle = 0
 
-
+class AIShip(arcade.Sprite):
+    def __init__(self, typeAI):
+        super().__init__(texture.enemy.ship, 1.5)
+        self.typeAI = typeAI
+        self.center_x = 300
+        self.center_y = 200
+    def update(self):
+        if self.typeAI == 1: #circler
+            self.angle += random.random() * 2
+            self.angle += -random.random() * 2
+            self.center_x += getCirSect(self.angle)[0]
+            self.center_y += getCirSect(self.angle)[1]
+        if self.typeAI == 2: #copier
+            self.angle += random.random() * 2
+            self.angle += -random.random() * 2
+            if self.center_y > 500 or self.center_y < 100 or self.center_x > 700 or self.center_x < 100:
+                self.angle += 2
+            self.center_x += getCirSect(self.angle)[0]
+            self.center_y += getCirSect(self.angle)[1]
 
 def getCirSect(angle): #get co-ords of where a line drawn from the center intersects with the circumference
     theta = math.radians(angle + 90)
@@ -79,6 +99,7 @@ class game(arcade.Window):
     def setup(self):
         self.playerList = arcade.SpriteList()
         self.projectileList = arcade.SpriteList()
+        self.enemyList = arcade.SpriteList()
 
         self.player = Player()
         self.playerList.append(self.player)
@@ -91,6 +112,7 @@ class game(arcade.Window):
 
         self.playerList.draw()
         self.projectileList.draw()
+        self.enemyList.draw()
 
     def on_key_press(self, key, modifiers):
 
@@ -127,6 +149,11 @@ class game(arcade.Window):
 
                 self.fireCooldownRIGHT = self.player.arrowCooldown
 
+        #dev
+        if key == arcade.key.E:
+            enemy = AIShip(2)
+            self.enemyList.append(enemy)
+
     def on_key_release(self, key, modifiers):
         if key == arcade.key.D:
             self.player.changeDIR += self.player.speed
@@ -137,6 +164,7 @@ class game(arcade.Window):
     def update(self, delta_time):
         self.projectileList.update()
         self.playerList.update()
+        self.enemyList.update()
 
         if self.fireCooldownLEFT > 0:
             self.fireCooldownLEFT += -delta_time
