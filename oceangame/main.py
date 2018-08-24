@@ -70,6 +70,7 @@ class AIShip(arcade.Sprite):
         self.typeAI = typeAI
         self.center_x = 300
         self.center_y = 200
+        self.hp = 3
     def update(self):
         if self.typeAI == 1: #circler
             self.angle += random.random() * 2
@@ -83,6 +84,8 @@ class AIShip(arcade.Sprite):
                 self.angle += 2
             self.center_x += getCirSect(self.angle)[0]
             self.center_y += getCirSect(self.angle)[1]
+        if self.hp < 0:
+            self.kill()
 
 def getCirSect(angle): #get co-ords of where a line drawn from the center intersects with the circumference
     theta = math.radians(angle + 90)
@@ -170,6 +173,14 @@ class game(arcade.Window):
             self.fireCooldownLEFT += -delta_time
         if self.fireCooldownRIGHT > 0:
             self.fireCooldownRIGHT += -delta_time
+
+        for arrow in self.projectileList:
+            hitList = arcade.check_for_collision_with_list(arrow, self.enemyList)
+            if len(hitList) > 0:
+                arrow.kill()
+
+            for enemy in hitList:
+                enemy.hp += -1
 
 #-------------------------------------------------------------------------------
 
