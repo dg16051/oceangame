@@ -45,10 +45,11 @@ class Ship(arcade.Sprite):
         super().__init__(texture, scale)
 
         # const vars
-        self.hp = 3
+        self.hp = 2
         self.speed = 1
-        self.center_x = 200
-        self.center_y = 200
+        self.center_x = random.randint(100, windowSize[0] - 100)
+        self.center_y = random.randint(100, windowSize[1] - 100)
+        self.angle = random.randint(0, 359)
         self.changeX = 0
         self.changeY = 0
         self.changeDIR= 0
@@ -62,6 +63,7 @@ class Ship(arcade.Sprite):
         self.changeX = getCirSect(self.angle)[0] * self.changeSPD
         self.changeY = getCirSect(self.angle)[1] * self.changeSPD
         self.center_x += self.changeX
+
         self.center_y += self.changeY
         self.angle += self.changeDIR
 
@@ -71,42 +73,44 @@ class Ship(arcade.Sprite):
         if self.angle < 0:
             self.angle = 360
 
+        if self.hp < 0:
+            self.kill()
+
     def fire(self, angle):
-        for i in range(-1,2):
-            localX = getCirSect(self.angle)[0] * 20 * i
-            localY = getCirSect(self.angle)[1] * 20 * i
-            arrow = Projectile(texture.arrow, 0.375, self.center_x + localX, self.center_y + localY, self.angle - angle, self.arrowSpeed)
-            self.projectileList.append(arrow)
+        if self.hp > -1:
+            for i in range(-1,2):
+                localX = getCirSect(self.angle)[0] * 12 * i + getCirSect(self.angle - angle)[0] * 30#1st const is spread, 2nd const is distance from boat
+                localY = getCirSect(self.angle)[1] * 12 * i + getCirSect(self.angle - angle)[1] * 30
+                arrow = Projectile(texture.arrow, 0.375, self.center_x + localX, self.center_y + localY, self.angle - angle, self.arrowSpeed)
+                self.projectileList.append(arrow)
 
 class Enemy(Ship):
     def __init__(self, typeAI, projectileList):
         super().__init__(texture.enemy.ship, 1, projectileList)
         self.typeAI = typeAI
-        self.timer = Timer(6)
+        self.leftTimer = Timer(self.arrowCooldown)
+        self.rightTimer = Timer(self.arrowCooldown)
+        self.changeSPD = 2
 
     def update(self):
         super().update()
 
-        self.changeSPD = 2
-        if self.typeAI == 1: #circler
-            pass
         if self.typeAI == 2: #copier
             self.angle += random.random() * 2
             self.angle += -random.random() * 2
-            if self.timer.update():
-                self.fire(180)
+            if self.leftTimer.update():
+                self.fire(-90)
+            elif self.rightTimer.update():
+                self.fire(90)
         if self.center_y > 500 or self.center_y < 100 or self.center_x > 700 or self.center_x < 100:
             self.angle += 2
 
-        if self.hp < 0:
-            self.kill()
 
 class Timer():
     def __init__(self, target):
         self.time = 0
         self.target = target
     def update(self):
-        print(self.time)
         self.time += deltaTime
         if self.time > self.target:
             self.time = 0
@@ -128,12 +132,11 @@ class game(arcade.Window):
         arcade.set_background_color(palette.ocean)
 
     def setup(self):
-        self.playerList = arcade.SpriteList()
         self.projectileList = arcade.SpriteList()
-        self.enemyList = arcade.SpriteList()
+        self.shipList = arcade.SpriteList()
 
         self.player = Ship(texture.player.ship, 1, self.projectileList)
-        self.playerList.append(self.player)
+        self.shipList.append(self.player)
 
         self.fireCooldownLEFT = 0
         self.fireCooldownRIGHT = 0
@@ -141,9 +144,8 @@ class game(arcade.Window):
     def on_draw(self):
         arcade.start_render()
 
-        self.playerList.draw()
         self.projectileList.draw()
-        self.enemyList.draw()
+        self.shipList.draw()
 
     def on_key_press(self, key, modifiers):
 
@@ -172,8 +174,9 @@ class game(arcade.Window):
 
         #dev
         if key == arcade.key.E:
-            enemy = Enemy(2, self.projectileList)
-            self.enemyList.append(enemy)
+            for i in range(50):
+                enemy = Enemy(2, self.projectileList)
+                self.shipList.append(enemy)
 
     def on_key_release(self, key, modifiers):
         if key == arcade.key.D:
@@ -186,21 +189,20 @@ class game(arcade.Window):
         global deltaTime
         deltaTime = delta_time
         self.projectileList.update()
-        self.playerList.update()
-        self.enemyList.update()
+        self.shipList.update()
 
         if self.fireCooldownLEFT > 0:
             self.fireCooldownLEFT += -delta_time
         if self.fireCooldownRIGHT > 0:
             self.fireCooldownRIGHT += -delta_time
 
-        # for arrow in self.projectileList:
-        #     hitList = arcade.check_for_collision_with_list(arrow, self.enemyList)
-        #     if len(hitList) > 0:
-        #         arrow.kill()
-        #
-        #     for enemy in hitList:
-        #         enemy.hp += -1
+        for arrow in self.projectileList:
+            hitList = arcade.check_for_collision_with_list(arrow, self.shipList)
+            if len(hitList) > 0:
+                arrow.kill()
+
+            for enemy in hitList:
+                enemy.hp += -1
 
 #-------------------------------------------------------------------------------
 
