@@ -16,6 +16,10 @@ deltaTime = 0
 class palette:
     ocean = [0,119,190]
 
+class player:
+    center_x = None
+    center_y = None
+
 class texture:
     class player:
         ship = "res/ship/player/nemedship.png"
@@ -95,6 +99,22 @@ class Enemy(Ship):
     def update(self):
         super().update()
 
+        if self.typeAI == 1:
+            self.distanceX = self.center_x - player.center_x
+            self.distanceY = self.center_y - player.center_y
+            self.angleTarget = round(math.degrees(math.atan(self.distanceY / self.distanceX)), 0)
+
+            if self.angle != self.angleTarget:
+                if self.angle < self.angleTarget:
+                    self.angle += 1
+                if self.angle > self.angleTarget:
+                    self.angle += -1
+            else:
+                if self.leftTimer.update():
+                    self.fire(-90)
+                elif self.rightTimer.update():
+                    self.fire(90)
+
         if self.typeAI == 2: #copier
             self.angle += random.random() * 2
             self.angle += -random.random() * 2
@@ -140,6 +160,7 @@ class game(arcade.Window):
 
         self.fireCooldownLEFT = 0
         self.fireCooldownRIGHT = 0
+        self.fireCooldownUP = 0
 
     def on_draw(self):
         arcade.start_render()
@@ -174,8 +195,8 @@ class game(arcade.Window):
 
         #dev
         if key == arcade.key.E:
-            for i in range(50):
-                enemy = Enemy(2, self.projectileList)
+            for i in range(1):
+                enemy = Enemy(1, self.projectileList)
                 self.shipList.append(enemy)
 
     def on_key_release(self, key, modifiers):
@@ -190,6 +211,9 @@ class game(arcade.Window):
         deltaTime = delta_time
         self.projectileList.update()
         self.shipList.update()
+
+        player.center_x = self.player.center_x
+        player.center_y = self.player.center_y
 
         if self.fireCooldownLEFT > 0:
             self.fireCooldownLEFT += -delta_time
