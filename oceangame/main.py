@@ -49,7 +49,7 @@ class Ship(arcade.Sprite):
         super().__init__(texture, scale)
 
         # const vars
-        self.hp = 2
+        self.hp = 5
         self.speed = 1
         self.center_x = random.randint(100, windowSize[0] - 100)
         self.center_y = random.randint(100, windowSize[1] - 100)
@@ -103,8 +103,12 @@ class Enemy(Ship):
             self.distanceX = self.center_x - player.center_x
             self.distanceY = self.center_y - player.center_y
             self.angleTarget = round(math.degrees(math.atan(self.distanceY / self.distanceX)), 0)
+            if self.angleTarget < 0:
+                self.angleTarget = 360 - self.angleTarget
 
-            if self.angle != self.angleTarget:
+            print(self.angle, self.angleTarget)
+
+            if self.angle < self.angleTarget - 10 or self.angle > self.angleTarget + 10:
                 if self.angle < self.angleTarget:
                     self.angle += 1
                 if self.angle > self.angleTarget:
@@ -125,6 +129,11 @@ class Enemy(Ship):
         if self.center_y > 500 or self.center_y < 100 or self.center_x > 700 or self.center_x < 100:
             self.angle += 2
 
+        if self.typeAI == -1:
+            self.distanceX = self.center_x - player.center_x
+            self.distanceY = self.center_y - player.center_y
+            self.angle = round(math.degrees(math.atan(self.distanceY / self.distanceX)), 0)
+            self.fire(90)
 
 class Timer():
     def __init__(self, target):
@@ -157,6 +166,26 @@ class game(arcade.Window):
 
         self.player = Ship(texture.player.ship, 1, self.projectileList)
         self.shipList.append(self.player)
+
+        print(self.player.get_points())
+
+
+        tempAngle = self.player.angle
+        self.player.angle = 0
+        tempPoints = self.player.points
+        print(tempPoints)
+        tempPoints[0][1] += 9
+        tempPoints[1][1] -= 9
+        tempPoints[2][1] -= 9
+        tempPoints[3][1] += 9
+        print(tempPoints)
+
+        self.player.points = tempPoints
+        self.player.angle = tempAngle
+        del tempPoints
+        del tempAngle
+
+        print(self.player.get_points())
 
         self.fireCooldownLEFT = 0
         self.fireCooldownRIGHT = 0
@@ -196,7 +225,7 @@ class game(arcade.Window):
         #dev
         if key == arcade.key.E:
             for i in range(1):
-                enemy = Enemy(1, self.projectileList)
+                enemy = Enemy(-1, self.projectileList)
                 self.shipList.append(enemy)
 
     def on_key_release(self, key, modifiers):
@@ -225,8 +254,8 @@ class game(arcade.Window):
             if len(hitList) > 0:
                 arrow.kill()
 
-            for enemy in hitList:
-                enemy.hp += -1
+##            for enemy in hitList:
+##                enemy.hp += -1
 
 #-------------------------------------------------------------------------------
 
